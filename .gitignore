@@ -14,7 +14,7 @@
 !go.sum
 !go.mod
 !healthcheck.gif
-!/github/workflows/go.yml
+!/.github/workflows/go.yml
 !install.sh
 !install.ps1
 !.github/*
