@@ -18,6 +18,7 @@
 !install.sh
 !install.ps1
 !.github/*
+!*.png
 
 # add more files as needed above this line
 
