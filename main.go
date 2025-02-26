@@ -13,6 +13,7 @@ import (
 	"lrs/awsclient"
 	"lrs/pricing"
 	"lrs/prompts"
+	"lrs/visualization"
 )
 
 type TestResult struct {
@@ -51,8 +52,6 @@ func main() {
 		log.Fatalf("Error getting function metadata: %v", err)
 	}
 	originalMemory := meta.MemorySize
-	// Detect architecture based on the available architectures in the metadata
-
 	arch := "x86_64"
 	for _, a := range meta.Architectures {
 		if a == "arm64" {
@@ -118,7 +117,7 @@ func main() {
 
 		// Wait for the configuration update to propagate.
 		fmt.Println("Waiting for configuration update...")
-		time.Sleep(8 * time.Second) // In production, you might poll until the update is confirmed.
+		time.Sleep(8 * time.Second) // In production, consider polling until the update is confirmed.
 
 		// Invoke the Lambda function with the (optional) test event data.
 		invokeResp, err := lambdaClient.InvokeFunction(ctx, lambdaARN, testEvent)
@@ -175,4 +174,26 @@ func main() {
 	fmt.Printf("Performance Sweet Spot: %d MB with duration %.2f ms\n", perfBest.Memory, perfBest.DurationMs)
 	fmt.Printf("Cost Effective Sweet Spot: %d MB with cost $%s\n",
 		costBest.Memory, strconv.FormatFloat(costBest.Cost, 'f', 10, 64))
+
+	// Ask the user if they want to see a visualization of the results.
+	showVis, err := prompts.PromptYesNo("Would you like to see a visualization of the results?")
+	if err != nil {
+		log.Fatalf("Error during prompt: %v", err)
+	}
+	if showVis {
+		var mems []int
+		var durationsArr []float64
+		var costArr []float64
+		for _, res := range results {
+			mems = append(mems, res.Memory)
+			durationsArr = append(durationsArr, res.DurationMs)
+			costArr = append(costArr, res.Cost)
+		}
+		err = visualization.GenerateVisualization(mems, durationsArr, costArr)
+		if err != nil {
+			log.Printf("Error generating visualization: %v", err)
+		} else {
+			fmt.Println("Visualization saved as visualization.html")
+		}
+	}
 }
